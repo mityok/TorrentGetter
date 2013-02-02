@@ -20,6 +20,7 @@ import java.util.List;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
@@ -151,7 +152,6 @@ public class TorrentClient extends JFrame implements PopulateTable {
 		});
 	}
 
-	
 	private void addComponentsToPane(Container pane) {
 		final JTextField titleField = new JTextField(20);
 		final JTextField imdbField = new JTextField(20);
@@ -231,8 +231,15 @@ public class TorrentClient extends JFrame implements PopulateTable {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				info.resetAll();
-				clearTable();
+
+				int dialogButton = JOptionPane.YES_NO_OPTION;
+				int dialogResult = JOptionPane.showConfirmDialog(TorrentClient.this,
+						"Would You Like to Clear AllYour Data?",
+						"Warning", dialogButton);
+				if (dialogResult == JOptionPane.YES_OPTION) {
+					info.resetAll();
+					clearTable();
+				}
 			}
 		});
 		deleteButton.addActionListener(new ActionListener() {
@@ -289,14 +296,11 @@ public class TorrentClient extends JFrame implements PopulateTable {
 
 	@Override
 	public void populate(Object[][] data) {
-
 		clearTable();
 		if (data != null) {
 			for (int i = 0; i < data.length; i++) {
 				((DefaultTableModel) table.getModel()).addRow(data[i]);
 			}
 		}
-
 	}
-
 }

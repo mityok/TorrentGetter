@@ -80,6 +80,8 @@ public class ImdbTimerTask extends TimerTask {
 		try {
 			URL url = new URL(urlString);
 			URLConnection conn = url.openConnection();
+			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2 (.NET CLR 3.5.30729)");
+			//conn.addRequestProperty("User-Agent", "Mozilla/4.76"); 
 			BufferedReader rd = new BufferedReader(new InputStreamReader(
 					conn.getInputStream()));
 			StringBuilder responseBuilder = new StringBuilder();

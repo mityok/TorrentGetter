@@ -23,21 +23,21 @@ import org.xml.sax.InputSource;
 import com.mityok.inter.PopulateTable;
 
 public class InfoHolder {
+	private static final String EPISODE = "episode";
+	private static final String SEASON = "season";
+	private static final String IMDB = "imdb";
+	private static final String TITLE = "title";
+	private static final String SERIAL = "serial";
 	public static final String DEFAULT_XML = "<?xml version=\"1.0\" encoding=\"utf-8\"?><catalog></catalog>";
 	private Preferences prefs;
 	public static final String PREF_NAME = "serial_catalog";
 	private Document mainDocFile;
-	private PopulateTable populator;
 	private final int MAX_SIZE = Preferences.MAX_VALUE_LENGTH;
 
 	public InfoHolder(PopulateTable populator) {
-		this.populator = populator;
 		prefs = Preferences.userNodeForPackage(com.mityok.TorrentClient.class);
-		// Preference key name
-
 		String xmlPref = prefs.get(PREF_NAME, DEFAULT_XML);
-		//
-		System.out.println(xmlPref);
+		System.out.println(xmlPref.length());
 		mainDocFile = getDocFromString(xmlPref);
 		populator.populate(getObjectMatrixFromDoc(mainDocFile));
 	}
@@ -46,7 +46,7 @@ public class InfoHolder {
 		if (doc == null) {
 			return null;
 		}
-		NodeList listOfEpisodes = doc.getElementsByTagName("serial");
+		NodeList listOfEpisodes = doc.getElementsByTagName(SERIAL);
 		int totalSerials = listOfEpisodes.getLength();
 
 		Object[][] matrix = new Object[totalSerials][4];
@@ -59,13 +59,13 @@ public class InfoHolder {
 			Node firstSerialNode = listOfEpisodes.item(s);
 			if (firstSerialNode.getNodeType() == Node.ELEMENT_NODE) {
 				Element eElement = (Element) firstSerialNode;
-				obj[0] = eElement.getAttribute("title");
+				obj[0] = eElement.getAttribute(TITLE);
 				NodeList elementsByTagName = eElement
-						.getElementsByTagName("imdb");
+						.getElementsByTagName(IMDB);
 				obj[1] = elementsByTagName.item(0).getTextContent();
-				elementsByTagName = eElement.getElementsByTagName("season");
+				elementsByTagName = eElement.getElementsByTagName(SEASON);
 				obj[2] = elementsByTagName.item(0).getTextContent();
-				elementsByTagName = eElement.getElementsByTagName("episode");
+				elementsByTagName = eElement.getElementsByTagName(EPISODE);
 				obj[3] = elementsByTagName.item(0).getTextContent();
 				matrix[s] = obj;
 			}
@@ -129,22 +129,22 @@ public class InfoHolder {
 		//
 		Element docElem = mainDocFile.getDocumentElement();
 		//
-		Element rootElement = mainDocFile.createElement("serial");
+		Element rootElement = mainDocFile.createElement(SERIAL);
 		docElem.appendChild(rootElement);
 
-		Attr attr = mainDocFile.createAttribute("title");
+		Attr attr = mainDocFile.createAttribute(TITLE);
 		attr.setValue((String)obj[0]);
 		rootElement.setAttributeNode(attr);
 		//
-		Element imdbElem = mainDocFile.createElement("imdb");
+		Element imdbElem = mainDocFile.createElement(IMDB);
 		imdbElem.appendChild(mainDocFile.createTextNode((String)obj[1]));
 		rootElement.appendChild(imdbElem);
 		//
-		Element seasonElem = mainDocFile.createElement("season");
+		Element seasonElem = mainDocFile.createElement(SEASON);
 		seasonElem.appendChild(mainDocFile.createTextNode(obj[2].toString()));
 		rootElement.appendChild(seasonElem);
 		//
-		Element episodeElem = mainDocFile.createElement("episode");
+		Element episodeElem = mainDocFile.createElement(EPISODE);
 		episodeElem.appendChild(mainDocFile.createTextNode(obj[3].toString()));
 		rootElement.appendChild(episodeElem);
 		//
@@ -155,8 +155,6 @@ public class InfoHolder {
 			xml = getStringFromDoc(mainDocFile);
 		}
 		prefs.put(PREF_NAME, xml);
-		// populator.populate(this.getObjectMatrixFromDoc(mainDocFile));
-
 	}
 
 	public Object[][] getData() {
@@ -164,8 +162,7 @@ public class InfoHolder {
 	}
 
 	public void updateRow(Object[] rowData) {
-		// TODO Auto-generated method stub
-		NodeList listOfEpisodes = mainDocFile.getElementsByTagName("serial");
+		NodeList listOfEpisodes = mainDocFile.getElementsByTagName(SERIAL);
 		int totalSerials = listOfEpisodes.getLength();
 		if (rowData == null || totalSerials == 0) {
 			return;
@@ -175,23 +172,22 @@ public class InfoHolder {
 			if (firstSerialNode.getNodeType() == Node.ELEMENT_NODE) {
 				Element eElement = (Element) firstSerialNode;
 				NodeList elementsByTagName = eElement
-						.getElementsByTagName("imdb");
+						.getElementsByTagName(IMDB);
 				if (((Element) elementsByTagName.item(0)).getTextContent()
 						.equals(rowData[1])) {
-					eElement.getElementsByTagName("season").item(0)
+					eElement.getElementsByTagName(SEASON).item(0)
 							.setTextContent((String) rowData[2]);
-					eElement.getElementsByTagName("episode").item(0)
+					eElement.getElementsByTagName(EPISODE).item(0)
 							.setTextContent((String) rowData[3]);
 				}
 			}
 		}
 		//
 		prefs.put(PREF_NAME, getStringFromDoc(mainDocFile));
-		// populator.populate(this.getObjectMatrixFromDoc(mainDocFile));
 	}
 
 	public void removeRow(Object[] rowData) {
-		NodeList listOfEpisodes = mainDocFile.getElementsByTagName("serial");
+		NodeList listOfEpisodes = mainDocFile.getElementsByTagName(SERIAL);
 		int totalSerials = listOfEpisodes.getLength();
 		if (rowData == null || totalSerials == 0) {
 			return;
@@ -201,7 +197,7 @@ public class InfoHolder {
 			if (firstSerialNode.getNodeType() == Node.ELEMENT_NODE) {
 				Element eElement = (Element) firstSerialNode;
 				NodeList elementsByTagName = eElement
-						.getElementsByTagName("imdb");
+						.getElementsByTagName(IMDB);
 				if (((Element) elementsByTagName.item(0)).getTextContent()
 						.equals(rowData[1])) {
 					firstSerialNode.getParentNode()
@@ -211,9 +207,5 @@ public class InfoHolder {
 			}
 		}
 		prefs.put(PREF_NAME, getStringFromDoc(mainDocFile));
-		// populator.populate(this.getObjectMatrixFromDoc(mainDocFile));
-
 	}
-
-	
 }
