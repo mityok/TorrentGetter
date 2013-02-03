@@ -5,6 +5,8 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TimerTask;
@@ -27,7 +29,7 @@ import com.mityok.model.AirDateData;
 import com.mityok.model.TorrentData;
 
 public class TorrentGetterThread extends Thread {
-	
+
 	private static final String BASE_URL = "http://torrentz.eu";
 	private static final String MAGNET = "magnet:?xt";
 	private List<String> torrentSitesLinks;
@@ -51,14 +53,22 @@ public class TorrentGetterThread extends Thread {
 				loadTorrent();
 			}
 		}
-		notificationHandler.respond(new NotificationItem(Status.SUCCESS, "download started"));
+		notificationHandler.respond(new NotificationItem(Status.SUCCESS,
+				"download started"));
 	}
 
 	private String buildValidName(AirDateData link) {
 		// BASE_URL + "/search?f=The+Big+Bang+Theory+s06e12";
-		return BASE_URL + "/search?f=" + link.getTitle().replace(" ", "+")
-				+ "+s" + String.format(format, link.getSeason()) + "e"
-				+ String.format(format, link.getEpisode());
+		String searchUrl = BASE_URL + "/search?f="
+				+ link.getTitle().replace(" ", "+");
+		if (link.isByDate()) {
+			DateFormat df = new SimpleDateFormat("yyyy+MM+dd");
+			searchUrl += "+" + df.format(link.getDate());
+		} else {
+			searchUrl += "+s" + String.format(format, link.getSeason()) + "e"
+					+ String.format(format, link.getEpisode());
+		}
+		return searchUrl;
 	}
 
 	private void loadTorrent() {
@@ -66,6 +76,9 @@ public class TorrentGetterThread extends Thread {
 		try {
 			URL url = new URL(urlString);
 			URLConnection conn = url.openConnection();
+			conn.setRequestProperty(
+					"User-Agent",
+					"Mozilla/5.0 (Windows; U; Windows NT 6.0; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2 (.NET CLR 3.5.30729)");
 			BufferedReader rd = new BufferedReader(new InputStreamReader(
 					conn.getInputStream()));
 			StringBuilder responseBuilder = new StringBuilder();
@@ -76,7 +89,6 @@ public class TorrentGetterThread extends Thread {
 			String string = responseBuilder.toString();
 			parseTorrentsListings(string);
 		} catch (Exception e1) {
-
 			e1.printStackTrace();
 		}
 
@@ -146,7 +158,6 @@ public class TorrentGetterThread extends Thread {
 
 				}
 			}
-
 			loadLink(torrents.get(0));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -154,12 +165,15 @@ public class TorrentGetterThread extends Thread {
 	}
 
 	private void loadLink(TorrentData torrentData) {
-
 		String urlString = BASE_URL + torrentData.getUrl();
 		System.out.println(urlString);
 		try {
 			URL url = new URL(urlString);
 			URLConnection conn = url.openConnection();
+			conn.setRequestProperty(
+					"User-Agent",
+					"Mozilla/5.0 (Windows; U; Windows NT 6.0; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2 (.NET CLR 3.5.30729)");
+
 			BufferedReader rd = new BufferedReader(new InputStreamReader(
 					conn.getInputStream()));
 			StringBuilder responseBuilder = new StringBuilder();
@@ -237,6 +251,9 @@ public class TorrentGetterThread extends Thread {
 		try {
 			URL url = new URL(urlString);
 			URLConnection conn = url.openConnection();
+			conn.setRequestProperty(
+					"User-Agent",
+					"Mozilla/5.0 (Windows; U; Windows NT 6.0; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2 (.NET CLR 3.5.30729)");
 			BufferedReader rd = new BufferedReader(new InputStreamReader(
 					conn.getInputStream()));
 			StringBuilder responseBuilder = new StringBuilder();
@@ -252,8 +269,7 @@ public class TorrentGetterThread extends Thread {
 				extractLink(magnetPos, string);
 			}
 		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			checkNext();
 		}
 
 	}
@@ -293,7 +309,8 @@ public class TorrentGetterThread extends Thread {
 		if (linksCounter < torrentSitesLinks.size()) {
 			launchTorrentSite(torrentSitesLinks.get(linksCounter));
 		} else {
-			notificationHandler.respond(new NotificationItem(Status.FAIL, "no valid nagnet links"));
+			notificationHandler.respond(new NotificationItem(Status.FAIL,
+					"no valid nagnet links"));
 		}
 
 	}

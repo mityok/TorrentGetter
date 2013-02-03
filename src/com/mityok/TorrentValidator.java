@@ -30,6 +30,7 @@ public class TorrentValidator {
 					if (episodes == null) {
 						return;
 					}
+					
 					final List<AirDateData> validLinks = new ArrayList<AirDateData>();
 					for (List<AirDateData> list : episodes) {
 						for (AirDateData airDateData : list) {
@@ -42,7 +43,8 @@ public class TorrentValidator {
 					if (validLinks.isEmpty()) {
 						return;
 					}
-					new TorrentGetterThread(new NotificationHandler() {
+					
+					TorrentGetterThread torrentGetterThread = new TorrentGetterThread(new NotificationHandler() {
 
 						@Override
 						public void respond(NotificationItem message) {
@@ -50,7 +52,8 @@ public class TorrentValidator {
 								torrentLoadUpdateHandler.update(validLinks);
 							}
 						}
-					}, validLinks).start();
+					}, validLinks);
+					torrentGetterThread.start();
 				}
 			}
 		});

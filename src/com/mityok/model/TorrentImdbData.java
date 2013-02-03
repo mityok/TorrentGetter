@@ -8,15 +8,17 @@ public class TorrentImdbData {
 	private int season;
 	private int episode;
 	private Date date;
+	private Boolean isByDate;
 
 	public TorrentImdbData(String title, String imdbLink, int season,
-			int episode, Date date) {
+			int episode, Date date, Boolean isByDate) {
 
 		this.title = title;
 		this.imdbLink = imdbLink;
 		this.season = season;
 		this.episode = episode;
 		this.date = date;
+		this.isByDate = isByDate;
 	}
 
 	public String getTitle() {
@@ -57,5 +59,13 @@ public class TorrentImdbData {
 
 	public void setDate(Date date) {
 		this.date = date;
+	}
+
+	public Boolean getIsByDate() {
+		return isByDate;
+	}
+
+	public void setIsByDate(Boolean isByDate) {
+		this.isByDate = isByDate;
 	}
 }

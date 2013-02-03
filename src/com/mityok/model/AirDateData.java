@@ -4,7 +4,6 @@ import java.util.Date;
 
 public class AirDateData {
 	private String title;
-	
 
 	private Date date;
 	private int season;
@@ -12,15 +11,26 @@ public class AirDateData {
 	private String imdbLink;
 	private boolean isValid;
 	private boolean isLoading;
+	private boolean isByDate;
 
-	public AirDateData(String title,Date date, int season, int episode, String imdb) {
-		this.title=title;
+	public AirDateData(String title, Date date, int season, int episode,
+			String imdb) {
+		this.title = title;
 		this.date = date;
 		this.season = season;
 		this.episode = episode;
 		imdbLink = imdb;
 		isValid = true;
 	}
+
+	public boolean isByDate() {
+		return isByDate;
+	}
+
+	public void setByDate(boolean isByDate) {
+		this.isByDate = isByDate;
+	}
+
 	public String getTitle() {
 		return title;
 	}
@@ -28,6 +38,7 @@ public class AirDateData {
 	public void setTitle(String title) {
 		this.title = title;
 	}
+
 	public Date getDate() {
 		return date;
 	}
@@ -54,8 +65,9 @@ public class AirDateData {
 
 	@Override
 	public String toString() {
-		return "{title: "+title+", imdbLink: " + imdbLink + ", date: " + date + ", season: "
-				+ season + ", episode: " + episode + ", valid: "+isValid+"}";
+		return "{title: " + title + ", imdbLink: " + imdbLink + ", date: "
+				+ date + ", season: " + season + ", episode: " + episode
+				+ ", valid: " + isValid + "}";
 	}
 
 	public String getImdbLink() {
@@ -73,9 +85,11 @@ public class AirDateData {
 	public void setValid(boolean isValid) {
 		this.isValid = isValid;
 	}
+
 	public boolean isLoading() {
 		return isLoading;
 	}
+
 	public void setLoading(boolean isLoading) {
 		this.isLoading = isLoading;
 	}

@@ -2,6 +2,9 @@ package com.mityok;
 
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.prefs.Preferences;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -23,6 +26,7 @@ import org.xml.sax.InputSource;
 import com.mityok.inter.PopulateTable;
 
 public class InfoHolder {
+	private static final String NULL = "null";
 	private static final String EPISODE = "episode";
 	private static final String SEASON = "season";
 	private static final String IMDB = "imdb";
@@ -30,14 +34,16 @@ public class InfoHolder {
 	private static final String SERIAL = "serial";
 	public static final String DEFAULT_XML = "<?xml version=\"1.0\" encoding=\"utf-8\"?><catalog></catalog>";
 	private Preferences prefs;
-	public static final String PREF_NAME = "serial_catalog";
+	public static final String PREF_NAME = "serials_catalog";
+	private static final String DATE = "date";
+	private static final String IS_BY_DATE = "is_by_date";
 	private Document mainDocFile;
 	private final int MAX_SIZE = Preferences.MAX_VALUE_LENGTH;
 
 	public InfoHolder(PopulateTable populator) {
 		prefs = Preferences.userNodeForPackage(com.mityok.TorrentClient.class);
 		String xmlPref = prefs.get(PREF_NAME, DEFAULT_XML);
-		System.out.println(xmlPref.length());
+		System.out.println(xmlPref);
 		mainDocFile = getDocFromString(xmlPref);
 		populator.populate(getObjectMatrixFromDoc(mainDocFile));
 	}
@@ -49,29 +55,47 @@ public class InfoHolder {
 		NodeList listOfEpisodes = doc.getElementsByTagName(SERIAL);
 		int totalSerials = listOfEpisodes.getLength();
 
-		Object[][] matrix = new Object[totalSerials][4];
+		Object[][] matrix = new Object[totalSerials][5];
 		if (totalSerials <= 0) {
 			return null;
 		}
-
-		for (int s = 0; s < totalSerials; s++) {
-			Object[] obj = new Object[4];
-			Node firstSerialNode = listOfEpisodes.item(s);
-			if (firstSerialNode.getNodeType() == Node.ELEMENT_NODE) {
-				Element eElement = (Element) firstSerialNode;
-				obj[0] = eElement.getAttribute(TITLE);
-				NodeList elementsByTagName = eElement
-						.getElementsByTagName(IMDB);
-				obj[1] = elementsByTagName.item(0).getTextContent();
-				elementsByTagName = eElement.getElementsByTagName(SEASON);
-				obj[2] = elementsByTagName.item(0).getTextContent();
-				elementsByTagName = eElement.getElementsByTagName(EPISODE);
-				obj[3] = elementsByTagName.item(0).getTextContent();
-				matrix[s] = obj;
+		try {
+			for (int s = 0; s < totalSerials; s++) {
+				Object[] obj = new Object[6];
+				Node firstSerialNode = listOfEpisodes.item(s);
+				if (firstSerialNode.getNodeType() == Node.ELEMENT_NODE) {
+					Element eElement = (Element) firstSerialNode;
+					obj[0] = eElement.getAttribute(TITLE);
+					NodeList elementsByTagName = eElement
+							.getElementsByTagName(IMDB);
+					obj[1] = elementsByTagName.item(0).getTextContent();
+					elementsByTagName = eElement.getElementsByTagName(SEASON);
+					String season = elementsByTagName.item(0).getTextContent();
+					obj[2] = Integer.parseInt(season);
+					elementsByTagName = eElement.getElementsByTagName(EPISODE);
+					String episode = elementsByTagName.item(0).getTextContent();
+					obj[3] = Integer.parseInt(episode);
+					elementsByTagName = eElement.getElementsByTagName(DATE);
+					String dateCont = elementsByTagName.item(0)
+							.getTextContent();
+					Date date = null;
+					if (!NULL.equals(dateCont)) {
+						date = new SimpleDateFormat("dd/MM/yyyy",
+								Locale.ENGLISH).parse(dateCont);
+					}
+					obj[4] = date;
+					elementsByTagName = eElement
+							.getElementsByTagName(IS_BY_DATE);
+					obj[5] = Boolean.valueOf(elementsByTagName.item(0)
+							.getTextContent());
+					matrix[s] = obj;
+				}
 			}
+			return matrix;
+		} catch (Exception e) {
+			return null;
 		}
 
-		return matrix;
 	}
 
 	public Document getDocFromString(String xml) {
@@ -108,8 +132,8 @@ public class InfoHolder {
 		prefs.put(PREF_NAME, DEFAULT_XML);
 		mainDocFile = this.getDocFromString(DEFAULT_XML);
 	}
+
 	public void addNewItem(Object[] obj) {
-	
 
 		if (mainDocFile == null) {
 			mainDocFile = getDocFromString(DEFAULT_XML);
@@ -123,7 +147,7 @@ public class InfoHolder {
 					mainDocFile.getDocumentElement(), true);
 			mainDocFileLastVersion.appendChild(copiedRoot);
 		} catch (ParserConfigurationException e) {
-
+			e.getStackTrace();
 		}
 
 		//
@@ -133,11 +157,11 @@ public class InfoHolder {
 		docElem.appendChild(rootElement);
 
 		Attr attr = mainDocFile.createAttribute(TITLE);
-		attr.setValue((String)obj[0]);
+		attr.setValue((String) obj[0]);
 		rootElement.setAttributeNode(attr);
 		//
 		Element imdbElem = mainDocFile.createElement(IMDB);
-		imdbElem.appendChild(mainDocFile.createTextNode((String)obj[1]));
+		imdbElem.appendChild(mainDocFile.createTextNode((String) obj[1]));
 		rootElement.appendChild(imdbElem);
 		//
 		Element seasonElem = mainDocFile.createElement(SEASON);
@@ -147,6 +171,20 @@ public class InfoHolder {
 		Element episodeElem = mainDocFile.createElement(EPISODE);
 		episodeElem.appendChild(mainDocFile.createTextNode(obj[3].toString()));
 		rootElement.appendChild(episodeElem);
+		//
+		Element dateElem = mainDocFile.createElement(DATE);
+		SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
+		Date date = (Date) obj[4];
+		String dateString = NULL;
+		if (date != null) {
+			dateString = format.format(date);
+		}
+		dateElem.appendChild(mainDocFile.createTextNode(dateString));
+		rootElement.appendChild(dateElem);
+		//
+		Element isByDateElem = mainDocFile.createElement(IS_BY_DATE);
+		isByDateElem.appendChild(mainDocFile.createTextNode(obj[5].toString()));
+		rootElement.appendChild(isByDateElem);
 		//
 		String xml = getStringFromDoc(mainDocFile);
 		if (xml.length() >= MAX_SIZE) {
@@ -176,14 +214,30 @@ public class InfoHolder {
 				if (((Element) elementsByTagName.item(0)).getTextContent()
 						.equals(rowData[1])) {
 					eElement.getElementsByTagName(SEASON).item(0)
-							.setTextContent((String) rowData[2]);
+							.setTextContent(((Integer) rowData[2]).toString());
 					eElement.getElementsByTagName(EPISODE).item(0)
-							.setTextContent((String) rowData[3]);
+							.setTextContent(((Integer) rowData[3]).toString());
+					//
+					SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
+					Date date = (Date) rowData[4];
+					String dateString = NULL;
+					if (date != null) {
+						dateString = format.format(date);
+					}
+					//
+					eElement.getElementsByTagName(DATE).item(0)
+							.setTextContent(dateString);
+					String bool = ((Boolean) rowData[5]).toString();
+					System.out.println("bool: " + bool);
+					eElement.getElementsByTagName(IS_BY_DATE).item(0)
+							.setTextContent(bool);
 				}
 			}
 		}
 		//
-		prefs.put(PREF_NAME, getStringFromDoc(mainDocFile));
+		String stringFromDoc = getStringFromDoc(mainDocFile);
+		System.out.println("stringFromDoc: " + stringFromDoc);
+		prefs.put(PREF_NAME, stringFromDoc);
 	}
 
 	public void removeRow(Object[] rowData) {

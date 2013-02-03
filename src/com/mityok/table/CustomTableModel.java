@@ -1,4 +1,6 @@
-package com.mityok;
+package com.mityok.table;
+
+import java.util.Date;
 
 import javax.swing.table.DefaultTableModel;
 
@@ -17,5 +19,13 @@ public class CustomTableModel extends DefaultTableModel {
 		} else {
 			return false;
 		}
+	}
+
+	public Class getColumnClass(int column) {
+		Object obj = getValueAt(0, column);
+		if (column == 4) {
+			return Date.class;
+		}
+		return obj.getClass();
 	}
 }

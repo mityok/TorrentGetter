@@ -15,10 +15,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
+import javax.swing.DefaultCellEditor;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -34,15 +39,21 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 
 import com.mityok.inter.PopulateTable;
 import com.mityok.inter.TableDataHahdler;
 import com.mityok.inter.TorrentLoadUpdateHandler;
 import com.mityok.model.AirDateData;
+import com.mityok.table.CustomTableModel;
+import com.mityok.table.DateEditor;
+import com.mityok.table.DateRenderer;
 
 public class TorrentClient extends JFrame implements PopulateTable {
 
+	private static final int FRAME_WIDTH = 700;
 	private static final long serialVersionUID = 1L;
 	TrayIcon trayIcon;
 	SystemTray tray;
@@ -53,7 +64,7 @@ public class TorrentClient extends JFrame implements PopulateTable {
 	private DefaultTableModel defaultTableModel;
 
 	public TorrentClient(String string) {
-		this.setSize(500, 500);
+		this.setSize(FRAME_WIDTH, 500);
 		setTitle(string);
 		if (SystemTray.isSupported()) {
 			tray = SystemTray.getSystemTray();
@@ -138,13 +149,14 @@ public class TorrentClient extends JFrame implements PopulateTable {
 			public void update(List<AirDateData> links) {
 				for (AirDateData airDateData : links) {
 					if (airDateData.isLoading()) {
-						Object[] obj = new Object[4];
+						Object[] obj = new Object[6];
 						obj[0] = airDateData.getTitle();
 						obj[1] = airDateData.getImdbLink();
-						obj[2] = Integer.toString(airDateData.getSeason());
-						obj[3] = Integer.toString(airDateData.getEpisode());
+						obj[2] = airDateData.getSeason();
+						obj[3] = airDateData.getEpisode();
+						obj[4] = airDateData.getDate();
+						obj[5] = airDateData.isByDate();
 						info.updateRow(obj);
-
 					}
 				}
 				populate(info.getData());
@@ -158,56 +170,70 @@ public class TorrentClient extends JFrame implements PopulateTable {
 		SpinnerModel sm = new SpinnerNumberModel(0, 0, 100, 1);
 		final JSpinner episodeField = new JSpinner(sm);
 		final JSpinner seasonField = new JSpinner(sm);
+		final JFormattedTextField dateField = new JFormattedTextField(
+				new SimpleDateFormat("dd/MM/yyyy"));
+		final JCheckBox checkBox=new JCheckBox();
 		JButton applyButton = new JButton("ADD NEW");
 		applyButton.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
+				System.out.println("sdfsd: " + checkBox.isSelected());
 				if (!titleField.getText().isEmpty()
 						&& !imdbField.getText().isEmpty()) {
-					Object[] obj = new Object[4];
+					Object[] obj = new Object[6];
 					obj[0] = titleField.getText();
 					obj[1] = imdbField.getText();
 					obj[2] = (Integer) seasonField.getValue();
 					obj[3] = (Integer) episodeField.getValue();
+					obj[4] = (Date) dateField.getValue();
+					obj[5] = (Boolean) checkBox.isSelected();
 					info.addNewItem(obj);
 					titleField.setText("");
 					imdbField.setText("");
 					seasonField.setValue(0);
 					episodeField.setValue(0);
+					dateField.setValue(null);
 					defaultTableModel.addRow(obj);
 				}
 			}
 		});
 		JPanel controls = new JPanel();
-		controls.setLayout(new GridLayout(2, 4));
+		controls.setLayout(new GridLayout(2, 7));
 		//
 		controls.add(new Label("TITLE:"));
 		controls.add(new Label("IMDB LINK:"));
 		controls.add(new Label("LAST SEASON"));
 		controls.add(new Label("LAST EPISODE"));
+		controls.add(new Label("LAST DATE"));
+		controls.add(new Label("BY DATE"));
 		controls.add(new Label(" "));
 		controls.add(titleField);
 		controls.add(imdbField);
 		controls.add(seasonField);
 		controls.add(episodeField);
+		controls.add(dateField);
+		controls.add(checkBox);
 		controls.add(applyButton);
-		controls.setPreferredSize(new Dimension(500, 40));
+		controls.setPreferredSize(new Dimension(FRAME_WIDTH, 40));
 		//
-		String[] columnNames = { "Title", "Imdb", "Season", "Episode", };
+		String[] columnNames = { "Title", "Imdb", "Season", "Episode", "Date" ,"Is By Date"};
 
 		table = new JTable();
 		defaultTableModel = new CustomTableModel(null, columnNames);
 		table.setModel(defaultTableModel);
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		table.setPreferredScrollableViewportSize(new Dimension(500, 70));
+		table.setPreferredScrollableViewportSize(new Dimension(FRAME_WIDTH, 70));
 		table.setFillsViewportHeight(true);
 		table.getTableHeader().setReorderingAllowed(false);
 		JScrollPane scrollPane = new JScrollPane(table);
-
+//
+		
+		table.setDefaultRenderer(Date.class, new DateRenderer());
+        table.setDefaultEditor(Date.class, new DateEditor());
 		// Add the scroll pane to this panel.
 		add(scrollPane);
-		scrollPane.setPreferredSize(new Dimension(500, 400));
+		scrollPane.setPreferredSize(new Dimension(FRAME_WIDTH, 400));
 		//
 		JToolBar toolBar = new JToolBar();
 		JButton resetButton = new JButton("RESET");
@@ -231,11 +257,11 @@ public class TorrentClient extends JFrame implements PopulateTable {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-
 				int dialogButton = JOptionPane.YES_NO_OPTION;
-				int dialogResult = JOptionPane.showConfirmDialog(TorrentClient.this,
-						"Would You Like to Clear AllYour Data?",
-						"Warning", dialogButton);
+				int dialogResult = JOptionPane.showConfirmDialog(
+						TorrentClient.this,
+						"Would You Like to Clear AllYour Data?", "Warning",
+						dialogButton);
 				if (dialogResult == JOptionPane.YES_OPTION) {
 					info.resetAll();
 					clearTable();
@@ -266,9 +292,8 @@ public class TorrentClient extends JFrame implements PopulateTable {
 			@Override
 			public void tableChanged(TableModelEvent arg0) {
 				if (TableModelEvent.UPDATE == arg0.getType()) {
-					// JOptionPane.showMessageDialog(TorrentClient.this,
-					// "Eggs are not supposed to be green.");
-					info.updateRow(getRowData(arg0.getLastRow()));
+					Object[] rowData = getRowData(arg0.getLastRow());
+					info.updateRow(rowData);
 				}
 			}
 		});

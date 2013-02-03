@@ -34,6 +34,7 @@ public class ImdbTimerTask extends TimerTask {
 	private List<TorrentImdbData> torrentImdbDataList;
 	private List<List<AirDateData>> episodes;
 	private TableDataHahdler tableDataHahdler;
+	private Date currentDate;
 
 	public List<List<AirDateData>> getEpisodes() {
 		return episodes;
@@ -49,11 +50,16 @@ public class ImdbTimerTask extends TimerTask {
 
 	private void setData(Object[][] objects) {
 		torrentImdbDataList = new ArrayList<TorrentImdbData>();
+		if (objects == null || objects.length == 0) {
+			handler.respond(new NotificationItem(Status.FAIL, "model is empty"));
+			return;
+		}
 		for (int i = 0; i < objects.length; i++) {
+			currentDate = new Date();
 			TorrentImdbData data = new TorrentImdbData((String) objects[i][0],
-					(String) objects[i][1],
-					Integer.parseInt(((String) objects[i][2])),
-					Integer.parseInt(((String) objects[i][3])), new Date());
+					(String) objects[i][1], (Integer) objects[i][2],
+					(Integer) objects[i][3], (Date) objects[i][4],
+					(Boolean) objects[i][5]);
 			torrentImdbDataList.add(data);
 		}
 
@@ -66,8 +72,9 @@ public class ImdbTimerTask extends TimerTask {
 			for (TorrentImdbData torrentImdbData : torrentImdbDataList) {
 				nextItem(torrentImdbData);
 			}
+			handler.respond(new NotificationItem(Status.SUCCESS, "done"));
 		}
-		handler.respond(new NotificationItem(Status.SUCCESS, "done"));
+
 	}
 
 	private void nextItem(final TorrentImdbData torrentImdbData) {
@@ -80,8 +87,10 @@ public class ImdbTimerTask extends TimerTask {
 		try {
 			URL url = new URL(urlString);
 			URLConnection conn = url.openConnection();
-			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2 (.NET CLR 3.5.30729)");
-			//conn.addRequestProperty("User-Agent", "Mozilla/4.76"); 
+			conn.setRequestProperty(
+					"User-Agent",
+					"Mozilla/5.0 (Windows; U; Windows NT 6.0; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2 (.NET CLR 3.5.30729)");
+			// conn.addRequestProperty("User-Agent", "Mozilla/4.76");
 			BufferedReader rd = new BufferedReader(new InputStreamReader(
 					conn.getInputStream()));
 			StringBuilder responseBuilder = new StringBuilder();
@@ -117,14 +126,16 @@ public class ImdbTimerTask extends TimerTask {
 													.setDate((Date) formatter
 															.parse(text));
 											if (airDateData.getDate().after(
-													torrentImdbData.getDate())) {
+													currentDate)) {
+												airDateData.setValid(false);
+											}
+											if(airDateData.isByDate() && !torrentImdbData.getDate().before(airDateData.getDate())){
 												airDateData.setValid(false);
 											}
 										} catch (ParseException e) {
 											e.printStackTrace();
 										}
 									}
-
 								} else {
 									airDateData.setValid(false);
 								}
@@ -137,22 +148,26 @@ public class ImdbTimerTask extends TimerTask {
 											torrentImdbData.getTitle(), null,
 											-1, -1, torrentImdbData
 													.getImdbLink());
-									Pattern p = Pattern.compile("\\d+");
-									Matcher m = p.matcher(text);
-									while (m.find()) {
-										if (airDateData.getSeason() < 0) {
-											airDateData.setSeason(Integer
-													.parseInt(m.group()));
-											if (airDateData.getSeason() < torrentImdbData
-													.getSeason()) {
-												airDateData.setValid(false);
-											}
-										} else if (airDateData.getEpisode() < 0) {
-											airDateData.setEpisode(Integer
-													.parseInt(m.group()));
-											if (airDateData.getEpisode() <= torrentImdbData
-													.getEpisode()) {
-												airDateData.setValid(false);
+									airDateData.setByDate(torrentImdbData
+											.getIsByDate());
+									if (!airDateData.isByDate()) {
+										Pattern p = Pattern.compile("\\d+");
+										Matcher m = p.matcher(text);
+										while (m.find()) {
+											if (airDateData.getSeason() < 0) {
+												airDateData.setSeason(Integer
+														.parseInt(m.group()));
+												if (airDateData.getSeason() < torrentImdbData
+														.getSeason()) {
+													airDateData.setValid(false);
+												}
+											} else if (airDateData.getEpisode() < 0) {
+												airDateData.setEpisode(Integer
+														.parseInt(m.group()));
+												if (airDateData.getEpisode() <= torrentImdbData
+														.getEpisode()) {
+													airDateData.setValid(false);
+												}
 											}
 										}
 									}
